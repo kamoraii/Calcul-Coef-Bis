@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculateur de Marge</title>
+
+<link rel="icon" href="Flavicon.png" type="image/png">
+<link rel="apple-touch-icon" href="Flavicon.png">
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.container{
+    background: rgba(0,0,0,0.75);
+    padding:30px;
+    border-radius:15px;
+    width:95%;
+    max-width:500px;
+    box-shadow:0 0 25px rgba(0,255,255,0.3);
+}
+
+h1{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.field{
+    margin-bottom:15px;
+}
+
+label{
+    display:block;
+    margin-bottom:5px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:2px solid #ccc;
+    font-size:16px;
+    background:white;
+    color:black;
+}
+
+input:focus{
+    outline:none;
+    border-color:#00ffff;
+    box-shadow:0 0 8px #00ffff;
+}
+
+.buttons{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+}
+
+button{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.calculate{
+    background:#00c6ff;
+    color:black;
+}
+
+.reset{
+    background:#ff4e50;
+    color:white;
+}
+
+button:hover{
+    opacity:0.85;
+    box-shadow:0 0 10px rgba(255,255,255,0.6);
+}
+
+.result{
+    text-align:center;
+    margin-top:25px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.benefit{
+    color:#39ff14;
+    text-shadow:0 0 10px #39ff14;
+}
+
+.deficit{
+    color:#ff0000;
+    text-shadow:0 0 10px #ff0000;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h1>Calculateur de Marge</h1>
+
+<div class="field">
+<label>Prix d’achat net (€)</label>
+<input type="number" id="achat" step="0.01">
+</div>
+
+<div class="field">
+<label>Taux applicable (%)</label>
+<input type="number" id="taux" step="0.01">
+</div>
+
+<div class="field">
+<label>Coefficient</label>
+<input type="number" id="coef" step="0.0001">
+</div>
+
+<div class="field">
+<label>Prix de vente (€)</label>
+<input type="number" id="vente" step="0.01">
+</div>
+
+<div class="field">
+<label id="benefLabel">Bénéfice net (€)</label>
+<input type="number" id="benefice" step="0.01">
+</div>
+
+<div class="buttons">
+<button class="calculate" onclick="calculate()">Calculer</button>
+<button class="reset" onclick="resetAll()">Remise à zéro</button>
+</div>
+
+<div id="result" class="result"></div>
+</div>
+
+<script>
+const fields=["achat","taux","coef","vente","benefice"];
+let lastEdited=null;
+
+fields.forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener("input",()=>{
+        lastEdited=id;
+        calculate();
+        saveData();
+    });
+});
+
+function getValues(){
+    return {
+        achat:parseFloat(achat.value)||0,
+        taux:parseFloat(taux.value)||0,
+        coef:parseFloat(coef.value)||0,
+        vente:parseFloat(vente.value)||0,
+        benefice:parseFloat(benefice.value)||0
+    };
+}
+
+function calculate(){
+    let {achat,taux,coef,vente,benefice}=getValues();
+
+    if(lastEdited==="taux" && achat){
+        coef=1+(taux/100);
+        vente=achat*coef;
+        benefice=vente-achat;
+    }
+    else if(lastEdited==="coef" && achat){
+        taux=(coef-1)*100;
+        vente=achat*coef;
+        benefice=vente-achat;
+    }
+    else if(lastEdited==="vente" && achat){
+        coef=vente/achat;
+        taux=(coef-1)*100;
+        benefice=vente-achat;
+    }
+    else if(lastEdited==="benefice" && achat){
+        vente=achat+benefice;
+        coef=vente/achat;
+        taux=(coef-1)*100;
+    }
+    else if(lastEdited==="achat" && vente){
+        coef=vente/achat;
+        taux=(coef-1)*100;
+        benefice=vente-achat;
+    }
+
+    achatInput.value=round(achat);
+    tauxInput.value=round(taux);
+    coefInput.value=round(coef);
+    venteInput.value=round(vente);
+    beneficeInput.value=round(benefice);
+
+    updateResult(benefice);
+}
+
+function round(num){
+    return Math.round(num*100)/100;
+}
+
+function updateResult(benefice){
+    const result=document.getElementById("result");
+    const label=document.getElementById("benefLabel");
+
+    if(benefice>=0){
+        label.textContent="Bénéfice net (€)";
+        result.className="result benefit";
+        result.textContent="🤑🤩🤌 Bénéfice : "+round(benefice)+" €";
+    }else{
+        label.textContent="Déficit net (€)";
+        result.className="result deficit";
+        result.textContent="👀😱😡😭 Déficit : "+round(Math.abs(benefice))+" €";
+    }
+}
+
+function resetAll(){
+    fields.forEach(id=>document.getElementById(id).value="");
+    localStorage.clear();
+    document.getElementById("result").textContent="";
+}
+
+function saveData(){
+    const data=getValues();
+    localStorage.setItem("calculData",JSON.stringify(data));
+}
+
+function loadData(){
+    const saved=JSON.parse(localStorage.getItem("calculData"));
+    if(saved){
+        fields.forEach(id=>{
+            document.getElementById(id).value=saved[id]||"";
+        });
+        calculate();
+    }
+}
+
+const achatInput=document.getElementById("achat");
+const tauxInput=document.getElementById("taux");
+const coefInput=document.getElementById("coef");
+const venteInput=document.getElementById("vente");
+const beneficeInput=document.getElementById("benefice");
+
+loadData();
+</script>
+</body>
+</html>
